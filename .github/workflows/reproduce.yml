@@ -58,18 +58,23 @@ jobs:
       matrix:
         include:
           - code: upstream-1.7.1
+            commit: a15b460
             expected: DEFECT REPRODUCED
             scripts: repro/a1-volume-folded-name.sh repro/a2-container-folded-name.sh repro/a3-machine-folded-name.sh repro/b-startup-load-error.sh
           - code: upstream-main
+            commit: 16e8d48
             expected: DEFECT REPRODUCED
             scripts: repro/a1-volume-folded-name.sh repro/a2-container-folded-name.sh repro/a3-machine-folded-name.sh repro/b-startup-load-error.sh
           - code: fix-a
+            commit: 5f19b9e
             expected: NO DEFECT
             scripts: repro/a1-volume-folded-name.sh repro/a2-container-folded-name.sh repro/a3-machine-folded-name.sh
           - code: fix-b
+            commit: e7c7327
             expected: NO DEFECT
             scripts: repro/b-startup-load-error.sh
           - code: pr-2127
+            commit: 1cbab2b
             expected: NO DEFECT
             scripts: repro/b-startup-load-error.sh
     steps:
@@ -85,12 +90,19 @@ jobs:
         with:
           name: pkg-${{ matrix.code }}
       - name: Install and start
+        env:
+          COMMIT: ${{ matrix.commit }}
         run: |
           [ -f container.pkg ] || mv container-installer-unsigned.pkg container.pkg
           shasum -a 256 container.pkg
           sudo installer -pkg container.pkg -target /
           container system start --enable-kernel-install
           container system status
+          server="$(container system status | awk '$1 == "server.commit" {print $2}')"
+          case "$server" in
+            "$COMMIT"*) echo "server commit $server is the code under test ($COMMIT)" ;;
+            *) echo "::error::server commit $server, expected $COMMIT"; exit 1 ;;
+          esac
           brew install e2fsprogs
       - name: Reproduce
         timeout-minutes: 25
@@ -147,6 +159,31 @@ jobs:
             exit 1
           fi
           echo "The tests fail without the fix, as expected."
+
+  full-suite:
+    name: make test on ${{ matrix.code }}
+    runs-on: macos-26
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - code: upstream-main
+            repository: apple/container
+            ref: 16e8d488ee1d9ede35ab9cf21b9973ffdc9361b3
+          - code: fix-a
+            repository: beshkenadze/container
+            ref: 5f19b9ee762a45f46ca79ee88cf593023077fc2b
+          - code: fix-b
+            repository: beshkenadze/container
+            ref: e7c73275ed6d68c48ec40ec4182d67333d36d2d5
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          repository: ${{ matrix.repository }}
+          ref: ${{ matrix.ref }}
+      - name: The unit test suite (make test)
+        run: make test
 
   summary:
     needs: reproduce

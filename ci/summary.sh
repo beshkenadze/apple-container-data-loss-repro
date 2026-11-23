@@ -6,6 +6,7 @@ cat results/*.tsv | awk -F '\t' -v order="upstream-1.7.1 upstream-main fix-a fix
     {
         if (!($1 in seen_d)) { seen_d[$1] = 1; defects[++nd] = $1 }
         if (!($2 in seen_c)) { seen_c[$2] = 1; codes[++nc] = $2 }
+        has_rows[$2] = 1
         mark = ($3 == $4) ? "as expected" : "**NOT as expected: " $4 "**"
         cell[$1, $2] = $3 " (" mark ")"
     }
@@ -16,7 +17,7 @@ cat results/*.tsv | awk -F '\t' -v order="upstream-1.7.1 upstream-main fix-a fix
         for (d = 1; d <= nd; d++) {
             line = "| " defects[d] " |"
             for (c = 1; c <= nc; c++) {
-                v = ((defects[d], codes[c]) in cell) ? cell[defects[d], codes[c]] : "—"
+                v = ((defects[d], codes[c]) in cell) ? cell[defects[d], codes[c]] : ((codes[c] in has_rows) ? "—" : "no result")
                 line = line " " v " |"
             }
             print line
