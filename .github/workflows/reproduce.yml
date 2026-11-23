@@ -186,7 +186,7 @@ jobs:
       # fails on upstream main on this runner with an argument parser error; it is skipped in every
       # column.
       - name: The unit test suite
-        run: swift test --skip TestCLI --skip IntegrationTests --skip ClusterCreateWorkersTests/resourceFlagsAreSeparateFromWorkers
+        run: swift test --skip TestCLI --skip IntegrationTests --skip resourceFlagsAreSeparateFromWorkers
 
   summary:
     needs: reproduce
