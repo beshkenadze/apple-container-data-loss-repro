@@ -1,0 +1,170 @@
+name: reproduce
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  RELEASE_PKG_URL: https://github.com/apple/container/releases/download/1.7.1/container-1.7.1-installer-signed.pkg
+  UPSTREAM_MAIN: 16e8d488ee1d9ede35ab9cf21b9973ffdc9361b3
+
+jobs:
+  build:
+    name: build ${{ matrix.code }}
+    runs-on: macos-26
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - code: upstream-main
+            repository: apple/container
+            ref: 16e8d488ee1d9ede35ab9cf21b9973ffdc9361b3
+          - code: fix-a
+            repository: beshkenadze/container
+            ref: 5f19b9ee762a45f46ca79ee88cf593023077fc2b
+          - code: fix-b
+            repository: beshkenadze/container
+            ref: e7c73275ed6d68c48ec40ec4182d67333d36d2d5
+          - code: pr-2127
+            repository: apple/container
+            ref: 1cbab2b04ba474dd149437a477968f81b6af57ae
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          repository: ${{ matrix.repository }}
+          ref: ${{ matrix.ref }}
+      - name: Show the commit
+        run: git log -1 --format='%H %ci %s'
+      - name: Build the installer package
+        run: make build installer-pkg
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pkg-${{ matrix.code }}
+          path: bin/debug/container-installer-unsigned.pkg
+          if-no-files-found: error
+
+  reproduce:
+    name: reproduce on ${{ matrix.code }}
+    needs: build
+    if: ${{ !cancelled() }}
+    runs-on: macos-26
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - code: upstream-1.7.1
+            expected: DEFECT REPRODUCED
+            scripts: repro/a1-volume-folded-name.sh repro/a2-container-folded-name.sh repro/a3-machine-folded-name.sh repro/b-startup-load-error.sh
+          - code: upstream-main
+            expected: DEFECT REPRODUCED
+            scripts: repro/a1-volume-folded-name.sh repro/a2-container-folded-name.sh repro/a3-machine-folded-name.sh repro/b-startup-load-error.sh
+          - code: fix-a
+            expected: NO DEFECT
+            scripts: repro/a1-volume-folded-name.sh repro/a2-container-folded-name.sh repro/a3-machine-folded-name.sh
+          - code: fix-b
+            expected: NO DEFECT
+            scripts: repro/b-startup-load-error.sh
+          - code: pr-2127
+            expected: NO DEFECT
+            scripts: repro/b-startup-load-error.sh
+    steps:
+      - uses: actions/checkout@v5
+      - name: Get the release package
+        if: matrix.code == 'upstream-1.7.1'
+        run: |
+          curl -fsSL -o container.pkg "$RELEASE_PKG_URL"
+          pkgutil --check-signature container.pkg
+      - name: Get the built package
+        if: matrix.code != 'upstream-1.7.1'
+        uses: actions/download-artifact@v4
+        with:
+          name: pkg-${{ matrix.code }}
+      - name: Install and start
+        run: |
+          [ -f container.pkg ] || mv container-installer-unsigned.pkg container.pkg
+          shasum -a 256 container.pkg
+          sudo installer -pkg container.pkg -target /
+          container system start --enable-kernel-install
+          container system status
+          brew install e2fsprogs
+      - name: Reproduce
+        timeout-minutes: 25
+        env:
+          REPRO_ALLOW_RESTART: "1"
+          CODE: ${{ matrix.code }}
+          EXPECTED: ${{ matrix.expected }}
+          SCRIPTS: ${{ matrix.scripts }}
+        run: |
+          # shellcheck disable=SC2086
+          ci/run.sh "$CODE" "$EXPECTED" $SCRIPTS
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: results-${{ matrix.code }}
+          path: |
+            results/
+            logs/
+
+  unit-tests:
+    name: unit tests of ${{ matrix.code }}
+    runs-on: macos-26
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - code: fix-a
+            ref: 5f19b9ee762a45f46ca79ee88cf593023077fc2b
+            filter: ReservedDirectoryTests|VolumeCreateReservationTests|ContainerCreateFoldedNameTests|MachineCreateFoldedNameTests
+            service-filter: VolumeCreateReservationTests|ContainerCreateFoldedNameTests|MachineCreateFoldedNameTests
+          - code: fix-b
+            ref: e7c73275ed6d68c48ec40ec4182d67333d36d2d5
+            filter: ContainersServiceCleanupTests
+            service-filter: ContainersServiceCleanupTests/bootKeeps
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          repository: beshkenadze/container
+          ref: ${{ matrix.ref }}
+          fetch-depth: 0
+      - name: The tests pass with the fix
+        env:
+          FILTER: ${{ matrix.filter }}
+        run: swift test --filter "$FILTER"
+      - name: The service tests fail with the sources of upstream main
+        env:
+          FILTER: ${{ matrix.service-filter }}
+        run: |
+          git checkout "$UPSTREAM_MAIN" -- Sources
+          git status --short
+          if swift test --filter "$FILTER"; then
+            echo "::error::the tests passed without the fix"
+            exit 1
+          fi
+          echo "The tests fail without the fix, as expected."
+
+  summary:
+    needs: reproduce
+    if: always()
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: results-*
+          merge-multiple: true
+      - name: Table
+        run: |
+          {
+            echo "## Results"
+            echo
+            ci/summary.sh
+            echo
+            cat ci/summary-notes.md
+          } >> "$GITHUB_STEP_SUMMARY"
+          cat "$GITHUB_STEP_SUMMARY"
