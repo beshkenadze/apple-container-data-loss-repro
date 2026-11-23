@@ -58,7 +58,7 @@ state of a container whose plugin was removed, and restarts the system. Reported
 
 ## Results
 
-Run [45190044627](https://github.com/beshkenadze/apple-container-data-loss-repro/actions/runs/45190044627)
+Run [45204525120](https://github.com/beshkenadze/apple-container-data-loss-repro/actions/runs/45204525120)
 (GitHub-hosted runner `macos-26`, image `macos-26-arm64` 20261117, macOS 26.7.2, Xcode 26.6):
 
 | Defect | upstream-1.7.1 | upstream-main | fix-a | fix-b | pr-2127 |
@@ -73,7 +73,10 @@ pass, and with the sources of upstream `main` the service tests fail (jobs "unit
 and "unit tests of fix-b"). The jobs "unit suite on ..." run the unit test suite of upstream
 `main` and of both fix branches; one test that fails on upstream `main` on this runner
 (`resourceFlagsAreSeparateFromWorkers`, an argument parser error) is skipped in all three. Each
-reproduce job checks that the installed server reports the commit of its column.
+reproduce job checks that the installed server reports the commit of its column. In this run
+the suite jobs of the fix branches needed re-runs (attempt 3): upstream's timing test
+`RuntimeCleanupHookTests.killsAHungPlugin` failed once on each, and the fix-a suite process
+stopped once with no failing test. Neither branch changes that code.
 
 ## How a reader sees the result
 
