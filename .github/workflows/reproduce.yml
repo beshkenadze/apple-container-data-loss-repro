@@ -25,10 +25,10 @@ jobs:
             ref: 16e8d488ee1d9ede35ab9cf21b9973ffdc9361b3
           - code: fix-a
             repository: beshkenadze/container
-            ref: 5f19b9ee762a45f46ca79ee88cf593023077fc2b
+            ref: 7f8e30cf83d88657b0f38b330a89a41e4793edcc
           - code: fix-b
             repository: beshkenadze/container
-            ref: e7c73275ed6d68c48ec40ec4182d67333d36d2d5
+            ref: 05b556ab083e0b313fde806fbac5fd5dafb99e85
           - code: pr-2127
             repository: apple/container
             ref: 1cbab2b04ba474dd149437a477968f81b6af57ae
@@ -66,11 +66,11 @@ jobs:
             expected: DEFECT REPRODUCED
             scripts: repro/a1-volume-folded-name.sh repro/a2-container-folded-name.sh repro/a3-machine-folded-name.sh repro/b-startup-load-error.sh
           - code: fix-a
-            commit: 5f19b9e
+            commit: 7f8e30c
             expected: NO DEFECT
             scripts: repro/a1-volume-folded-name.sh repro/a2-container-folded-name.sh repro/a3-machine-folded-name.sh
           - code: fix-b
-            commit: e7c7327
+            commit: 05b556a
             expected: NO DEFECT
             scripts: repro/b-startup-load-error.sh
           - code: pr-2127
@@ -131,11 +131,11 @@ jobs:
       matrix:
         include:
           - code: fix-a
-            ref: 5f19b9ee762a45f46ca79ee88cf593023077fc2b
+            ref: 7f8e30cf83d88657b0f38b330a89a41e4793edcc
             filter: ReservedDirectoryTests|VolumeCreateReservationTests|ContainerCreateFoldedNameTests|MachineCreateFoldedNameTests
             service-filter: VolumeCreateReservationTests|ContainerCreateFoldedNameTests|MachineCreateFoldedNameTests
           - code: fix-b
-            ref: e7c73275ed6d68c48ec40ec4182d67333d36d2d5
+            ref: 05b556ab083e0b313fde806fbac5fd5dafb99e85
             filter: ContainersServiceCleanupTests
             service-filter: ContainersServiceCleanupTests/bootKeeps
     steps:
@@ -173,10 +173,10 @@ jobs:
             ref: 16e8d488ee1d9ede35ab9cf21b9973ffdc9361b3
           - code: fix-a
             repository: beshkenadze/container
-            ref: 5f19b9ee762a45f46ca79ee88cf593023077fc2b
+            ref: 7f8e30cf83d88657b0f38b330a89a41e4793edcc
           - code: fix-b
             repository: beshkenadze/container
-            ref: e7c73275ed6d68c48ec40ec4182d67333d36d2d5
+            ref: 05b556ab083e0b313fde806fbac5fd5dafb99e85
     steps:
       - uses: actions/checkout@v5
         with:

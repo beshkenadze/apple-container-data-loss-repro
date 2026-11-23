@@ -11,8 +11,8 @@ command, its answer and the evidence (file listings, SHA-256 hashes, CLI output)
 |---|---|---|
 | `upstream-1.7.1` | release 1.7.1, the signed installer package from the [release page](https://github.com/apple/container/releases/tag/1.7.1) | `a15b46097aa4c2325da13c1fb5192b9274aab083` |
 | `upstream-main` | `main`, built from source on the runner | `16e8d488ee1d9ede35ab9cf21b9973ffdc9361b3` (2026-11-13) |
-| `fix-a` | branch [`fix/folded-name-create`](https://github.com/beshkenadze/container/tree/fix/folded-name-create), on `main` above | 5f19b9ee762a45f46ca79ee88cf593023077fc2b |
-| `fix-b` | branch [`fix/keep-unloadable-bundles`](https://github.com/beshkenadze/container/tree/fix/keep-unloadable-bundles), on `main` above | e7c73275ed6d68c48ec40ec4182d67333d36d2d5 |
+| `fix-a` | branch [`fix/folded-name-create`](https://github.com/beshkenadze/container/tree/fix/folded-name-create), on `main` above | 7f8e30cf83d88657b0f38b330a89a41e4793edcc |
+| `fix-b` | branch [`fix/keep-unloadable-bundles`](https://github.com/beshkenadze/container/tree/fix/keep-unloadable-bundles), on `main` above | 05b556ab083e0b313fde806fbac5fd5dafb99e85 |
 | `pr-2127` | head of [apple/container#2127](https://github.com/apple/container/pull/2127), another fix for defect B | 1cbab2b04ba474dd149437a477968f81b6af57ae |
 
 The upstream code is not changed. The built columns use `make build installer-pkg` and install the
@@ -33,7 +33,8 @@ look up a volume, container or machine by its exact name, find nothing, and then
 - **A2, containers** ([`a2-container-folded-name.sh`](repro/a2-container-folded-name.sh)).
   `container create --name CWEB` beside `cweb` succeeds and writes its runtime configuration over
   that of `cweb`. `container delete CWEB` then removes the directory of `cweb`; `cweb` is still
-  listed.
+  listed. This happens when `cweb` has no network attachment (for example `--network none`). When
+  `cweb` is on a network, its hostname `cweb` makes the existing hostname check refuse `CWEB` first.
 - **A3, machines** ([`a3-machine-folded-name.sh`](repro/a3-machine-folded-name.sh)).
   `container machine create --name MDEV` beside `mdev` writes into the bundle of `mdev`.
 
