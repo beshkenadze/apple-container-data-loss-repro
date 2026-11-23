@@ -57,7 +57,7 @@ state of a container whose plugin was removed, and restarts the system. Reported
 
 ## Results
 
-Run [45177747488](https://github.com/beshkenadze/apple-container-data-loss-repro/actions/runs/45177747488)
+Run [45190044627](https://github.com/beshkenadze/apple-container-data-loss-repro/actions/runs/45190044627)
 (GitHub-hosted runner `macos-26`, image `macos-26-arm64` 20261117, macOS 26.7.2, Xcode 26.6):
 
 | Defect | upstream-1.7.1 | upstream-main | fix-a | fix-b | pr-2127 |
@@ -69,7 +69,10 @@ Run [45177747488](https://github.com/beshkenadze/apple-container-data-loss-repro
 
 The same run also builds each fix branch and runs its new unit tests twice: with the fix they
 pass, and with the sources of upstream `main` the service tests fail (jobs "unit tests of fix-a"
-and "unit tests of fix-b").
+and "unit tests of fix-b"). The jobs "unit suite on ..." run the unit test suite of upstream
+`main` and of both fix branches; one test that fails on upstream `main` on this runner
+(`resourceFlagsAreSeparateFromWorkers`, an argument parser error) is skipped in all three. Each
+reproduce job checks that the installed server reports the commit of its column.
 
 ## How a reader sees the result
 
