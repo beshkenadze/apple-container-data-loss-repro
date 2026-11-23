@@ -55,6 +55,22 @@ runtime plugin that is not installed in the configuration of one throwaway conta
 state of a container whose plugin was removed, and restarts the system. Reported upstream as
 [apple/container#2033](https://github.com/apple/container/issues/2033).
 
+## Results
+
+Run [45177747488](https://github.com/beshkenadze/apple-container-data-loss-repro/actions/runs/45177747488)
+(GitHub-hosted runner `macos-26`, image `macos-26-arm64` 20261117, macOS 26.7.2, Xcode 26.6):
+
+| Defect | upstream-1.7.1 | upstream-main | fix-a | fix-b | pr-2127 |
+|---|---|---|---|---|---|
+| A1 volume | DEFECT REPRODUCED | DEFECT REPRODUCED | NO DEFECT | — | — |
+| A2 container | DEFECT REPRODUCED | DEFECT REPRODUCED | NO DEFECT | — | — |
+| A3 machine | DEFECT REPRODUCED | DEFECT REPRODUCED | NO DEFECT | — | — |
+| B startup load | DEFECT REPRODUCED | DEFECT REPRODUCED | — | NO DEFECT | NO DEFECT |
+
+The same run also builds each fix branch and runs its new unit tests twice: with the fix they
+pass, and with the sources of upstream `main` the service tests fail (jobs "unit tests of fix-a"
+and "unit tests of fix-b").
+
 ## How a reader sees the result
 
 The job summary of each run has a table: defect by code under test. Each cell is the last line of
