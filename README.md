@@ -129,3 +129,7 @@ Read this before you run them:
 - **Anything that needs a running container.** GitHub-hosted macOS runners cannot boot a VM:
   `Error Domain=VZErrorDomain Code=2 "Virtualization is not available on this hardware."`. A
   reproduction that needs a started container needs a self-hosted Mac.
+
+## Licence
+
+Apache License 2.0. See [LICENSE](LICENSE).
